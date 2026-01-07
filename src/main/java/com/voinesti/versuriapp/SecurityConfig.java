@@ -1,9 +1,13 @@
-package com.voinesti.versuriapp; // Asigură-te că pachetul corespunde cu cel din proiectul tău
+package com.voinesti.versuriapp;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -14,22 +18,27 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests((requests) -> requests
-                // 1. Oricine poate vedea pagina de login și resursele statice (CSS/Imagini)
-                .requestMatchers("/login", "/css/**", "/images/**").permitAll()
-                
-                // 2. Doar ADMIN-ul (tu) are voie să adauge sau să modifice ceva
-                .requestMatchers("/admin/**", "/adauga", "/editare/**", "/schimba-piesa").hasRole("ADMIN")
-                
-                // 3. Orice altă pagină (vizualizarea versurilor) necesită logare (fie USER, fie ADMIN)
+                .requestMatchers("/login", "/css/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form
-                .loginPage("/login") // Vom crea noi o pagină de login frumoasă mai târziu
+                .loginPage("/login")
                 .defaultSuccessUrl("/", true)
                 .permitAll()
             )
-            .logout((logout) -> logout.permitAll());
+            .logout((logout) -> logout.permitAll())
+            .csrf(csrf -> csrf.disable()); // Dezactivăm CSRF pentru moment ca să meargă login-ul ușor
 
         return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails user = User.withDefaultPasswordEncoder()
+            .username("flavius")
+            .password("voinesti2024")
+            .roles("ADMIN")
+            .build();
+        return new InMemoryUserDetailsManager(user);
     }
 }
